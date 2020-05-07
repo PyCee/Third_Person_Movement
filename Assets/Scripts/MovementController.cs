@@ -13,44 +13,58 @@ public class MovementController : MonoBehaviour
     public float midairSpeedMultiplier;
     public float momentumMultiplier;
     public float jumpSpeed;
-    //public Transform cameraTransform;
+    private Vector3 midairMomentum;
     [Header("Variable Height Jump")]
     public bool enableVariableJump;
     public float midJumpSpeed;
     public float highJumpSpeed;
     public float highJumpTimeWindow;
+    private int jumpLevel = 0;
     [Header("Double Jump")]
     public bool enableDoubleJump;
     public float doubleJumpSpeed;
     public bool jumpAfterDive;
+    private bool doubleJumpReady = false;
     [Header("Dive")]
+    public bool diveEnabled;
     public float diveSpeedMultiplier;
     public float diveDrag;
     public float minDiveSpeed;
     public float endDiveSpeed;
-    [Header("Wall Jump")]
-    public bool enableWallJump;
+    private Vector3 diveMovement;
+    [Header("Wall Climb")]
+    public bool wallClimbEnabled;
     public float wallJumpAngle;
     public float wallJumpSpeed;
-    private Vector3 wallJumpNormal;
-    [Header("Other")]
+    public float wallClimbDuration;
+    public float wallClimbSpeed;
+    public float wallSlideSpeed;
+    public float wallClimbVaultRayOffset;
+    private Vector3 wallClimbNormal;
+    private float wallClimbProgress;
+    [Header("Vault")]
+    // TODO have variable to store normal data when vaulting, currently just use wall climb normal
+    public float vaultRayOffset;
+    public float vaultRayDistance;
+    public float vaultLiftSpeed;
+    public float vaultJumpSpeed;
+    public float vaultJumpAngle;
+    [Header("Slam")]
     public float slowdownRate;
     public GameObject slamTargetMarkerPrefab;
+    private GameObject slamTargetMarker;
+    private float normalFixedDeltaTime;
+    [Header("Other")]
 
     private float timeOnGround = 0.0f;
-    private bool doubleJumpReady = false;
     private CharacterController cc;
     private Vector3 movement;
-    private int jumpLevel = 0;
-    private Vector3 diveMovement;
-    private Vector3 midairMomentum;
-    private float fixedDeltaTime;
-    private GameObject slamTargetMarker;
 
     enum MovementState {
         Standard,
         Midair,
-        WallJump,
+        WallClimb,
+        Vault,
         Dive,
         ChargeSlam,
         Slam
@@ -63,8 +77,7 @@ public class MovementController : MonoBehaviour
         material = GetComponent<Renderer>().material;
         Cursor.lockState = CursorLockMode.Locked;
         cc = GetComponent<CharacterController>();
-
-        this.fixedDeltaTime = Time.fixedDeltaTime;
+        this.normalFixedDeltaTime = Time.fixedDeltaTime;
     }
 
     void Update()
@@ -85,6 +98,8 @@ public class MovementController : MonoBehaviour
 
         switch(movementState){
             case MovementState.Standard:
+                movement = new Vector3(controlledMovement.x, movement.y, controlledMovement.z);
+
                 if(!cc.isGrounded){
                     SetState(MovementState.Midair);
                 } else if(Input.GetButtonDown("Jump")){
@@ -94,93 +109,101 @@ public class MovementController : MonoBehaviour
                         Jump();
                     }
                 }
-                material.SetColor("_Color", Color.red);//
-                movement = new Vector3(controlledMovement.x, movement.y, controlledMovement.z);
                 break;
             case MovementState.Midair:
-                material.SetColor("_Color", Color.black);//
                 controlledMovement *= midairSpeedMultiplier;
                 movement = new Vector3(controlledMovement.x, movement.y, controlledMovement.z);
                 movement += midairMomentum;
 
-                if(Input.GetButtonDown("Jump")){
-                    if(enableDoubleJump && doubleJumpReady){
-                        DoubleJump();
-                    }
-                }
-                if(Input.GetButtonDown("Dive")){
-                    Vector3 flatMovement = movement;
-                    flatMovement.y = 0;
-                    if((flatMovement.sqrMagnitude > (minDiveSpeed * minDiveSpeed))){
-                        diveMovement = flatMovement * diveSpeedMultiplier;
-                        movement.y = 0;
-                        doubleJumpReady = jumpAfterDive;
-                        SetState(MovementState.Dive);
-                        // TODO: start dive animation
-                    }
-                }
-                if(Input.GetButtonDown("Fire1")){
+                Vector3 flatMovement = movement;
+                flatMovement.y = 0;
+                if(diveEnabled && Input.GetButtonDown("Dive") && flatMovement.sqrMagnitude > (minDiveSpeed * minDiveSpeed)){
+                    SetState(MovementState.Dive);
+                } else if(Input.GetButtonDown("Jump") && enableDoubleJump && doubleJumpReady){
+                    DoubleJump();
+                } else if(Input.GetButtonDown("Fire1")){
                     SetState(MovementState.ChargeSlam);
-                    if(slamTargetMarker == null){
-                        slamTargetMarker = Instantiate(slamTargetMarkerPrefab);
-                    }
-                    RaycastHit hit;
-                    // Does the ray intersect any objects excluding the player layer
-                    if (Physics.Raycast(transform.position, Vector3.up * -1.0f, out hit, Mathf.Infinity))
-                    {
-                        slamTargetMarker.transform.position = hit.point + new Vector3(0.0f, 0.25f, 0.0f);
-                    }
-                }
-                if(cc.isGrounded){
+                } else if(cc.isGrounded){
                     SetState(MovementState.Standard);
                 }
                 break;
-            case MovementState.WallJump:
-                movement = new Vector3(0.0f, 0.0f, 0.0f);
-                material.SetColor("_Color", Color.green);//
+            case MovementState.WallClimb:
 
-                if(cc.isGrounded){
+                Vector3 climbMovement;
+                if(wallClimbProgress <= wallClimbDuration){
+                    // Climb wall
+                    wallClimbProgress += Time.deltaTime;
+                    climbMovement = new Vector3(0.0f, 1.0f, 0.0f);
+                    climbMovement *= wallClimbSpeed;
+                } else {
+                    // Slide down Wall
+                    climbMovement = new Vector3(0.0f, -1.0f, 0.0f);
+                    climbMovement *= wallSlideSpeed;
+                }
+                movement = climbMovement;
+
+                // TODO: consider using layer to filter out many collisions
+                Vector3 rayOffset = new Vector3(0.0f, wallClimbVaultRayOffset, 0.0f);
+                if (!Physics.Raycast(transform.position + rayOffset, wallClimbNormal * -1.0f, vaultRayDistance)){
+                    // if character has reached top of wall, vault over
+                    SetState(MovementState.Vault);
+
+                } else if(cc.isGrounded){
                     SetState(MovementState.Standard);
                 } else if(Input.GetButtonDown("Jump")){
-                    Vector3 cross = Vector3.Cross(wallJumpNormal, Vector3.up);
+                    Vector3 cross = Vector3.Cross(wallClimbNormal, Vector3.up);
                     Quaternion qua = Quaternion.AngleAxis(wallJumpAngle, cross);
-                    Vector3 dir = qua * wallJumpNormal;
+                    Vector3 dir = qua * wallClimbNormal;
                     movement = dir * wallJumpSpeed;
                     SetState(MovementState.Midair);
                 }
                 break;
+            case MovementState.Vault:
+                Vector3 vaultLowerOffset = new Vector3(0.0f, vaultRayOffset, 0.0f);
+                if (!Physics.Raycast(transform.position + vaultLowerOffset, wallClimbNormal * -1.0f, vaultRayDistance)){
+                    // If character is high enough to vault
+                    Vector3 cross = Vector3.Cross(wallClimbNormal, Vector3.up);
+                    Quaternion qua = Quaternion.AngleAxis(-vaultJumpAngle, cross);
+                    Vector3 dir = qua * (wallClimbNormal * -1.0f);
+                    movement = dir * vaultJumpSpeed;
+                    SetState(MovementState.Midair);
+                } else {
+                    Vector3 vaultMovement = new Vector3(0.0f, 1.0f, 0.0f);
+                    vaultMovement *= wallClimbSpeed;
+                    movement = vaultMovement;
+                }
+                break;
             case MovementState.Dive:
+            
+                // Slow dive movement on ground
                 if (cc.isGrounded){
-                    // Slow dive movement
                     diveMovement *= (1.0f - (diveDrag * Time.deltaTime));
                 }
-                material.SetColor("_Color", Color.blue);//
+                movement = new Vector3(diveMovement.x, movement.y, diveMovement.z);
+
                 if(diveMovement.sqrMagnitude < (endDiveSpeed * endDiveSpeed)){
                     // TODO: change this from diveMovement to flat cc.velocity
                     SetState(MovementState.Standard);
                 }
-                movement = new Vector3(diveMovement.x, movement.y, diveMovement.z);
                 break;
             case MovementState.ChargeSlam:
-                material.SetColor("_Color", Color.green);//
                 // TODO: slow down over time
                 Time.timeScale = slowdownRate;
-                Time.fixedDeltaTime = this.fixedDeltaTime * Time.timeScale;
+                Time.fixedDeltaTime = this.normalFixedDeltaTime * Time.timeScale;
+                movement = new Vector3(controlledMovement.x, movement.y, controlledMovement.z);
+
                 // TODO: aim slam target
+
                 if(Input.GetButtonUp("Fire1")){
-                    // TODO: Store slam info based on input
-                    Destroy(slamTargetMarker);
                     SetState(MovementState.Slam);
                 }
-                movement = new Vector3(controlledMovement.x, movement.y, controlledMovement.z);
                 break;
             case MovementState.Slam:
                 Time.timeScale = 1.0f;
-                Time.fixedDeltaTime = this.fixedDeltaTime * Time.timeScale;
+                Time.fixedDeltaTime = this.normalFixedDeltaTime * Time.timeScale;
+                //movement = new Vector3();
                 if(cc.isGrounded)
                     SetState(MovementState.Standard);
-                material.SetColor("_Color", Color.white);//
-                //movement = new Vector3(controlledMovement.x, movement.y, controlledMovement.z);
                 break;
             default:
                 break;
@@ -194,18 +217,45 @@ public class MovementController : MonoBehaviour
         movementState = ms;
         switch(movementState){
             case MovementState.Standard:
+                material.SetColor("_Color", Color.red);//
                 break;
             case MovementState.Midair:
+                material.SetColor("_Color", Color.black);//
                 midairMomentum = movement * momentumMultiplier;
                 midairMomentum.y = 0.0f;
                 break;
-            case MovementState.WallJump:
+            case MovementState.WallClimb:
+                material.SetColor("_Color", Color.green);//
+                wallClimbProgress = 0.0f;
+                break;
+            case MovementState.Vault:
+                material.SetColor("_Color", Color.magenta);//
                 break;
             case MovementState.Dive:
+                material.SetColor("_Color", Color.blue);//
+                Vector3 flatMovement = movement;
+                flatMovement.y = 0;
+                diveMovement = flatMovement * diveSpeedMultiplier;
+                movement.y = 0;
+                doubleJumpReady = jumpAfterDive;
                 break;
             case MovementState.ChargeSlam:
+                material.SetColor("_Color", Color.green);//
+                if(slamTargetMarker == null){
+                    slamTargetMarker = Instantiate(slamTargetMarkerPrefab);
+                }
+                RaycastHit hit;
+                // Does the ray intersect any objects excluding the player layer
+                if (Physics.Raycast(transform.position, Vector3.up * -1.0f, out hit, Mathf.Infinity))
+                {
+                    slamTargetMarker.transform.position = hit.point + new Vector3(0.0f, 0.25f, 0.0f);
+                }
                 break;
             case MovementState.Slam:
+                material.SetColor("_Color", Color.white);//
+                // TODO: Store slam info based on input
+                if(slamTargetMarker)
+                    Destroy(slamTargetMarker);
                 break;
             default:
                 break;
@@ -256,11 +306,12 @@ public class MovementController : MonoBehaviour
             // Stun character for slamming head into wall?
             SetState(MovementState.Standard);
         }
-        if(movementState == MovementState.Midair && enableWallJump &&
-            Vector3.Dot(Camera.main.transform.forward, hit.normal) < -0.0){
+        if(movementState == MovementState.Midair && wallClimbEnabled &&
+            Vector3.Dot(Vector3.up, hit.normal) < 0.7071 && Vector3.Dot(Vector3.up, hit.normal) > -0.7071){
+            // TODO base if on movement direction
             // Hold onto wall
-            wallJumpNormal = hit.normal;
-            SetState(MovementState.WallJump);
+            wallClimbNormal = hit.normal;
+            SetState(MovementState.WallClimb);
         }
     }
     public void OnTriggerEnter(Collider collider){
