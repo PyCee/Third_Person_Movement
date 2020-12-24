@@ -46,10 +46,9 @@ public class MovementController : MonoBehaviour
 
         currMovementState = GetComponent<StandardMovement>();
         movementStates = new List<MovementState>();
-        movementStates.Add(GetComponent<StandardMovement>());
-        movementStates.Add(GetComponent<MidairMovement>());
-        movementStates.Add(GetComponent<WallClimbMovement>());
-        movementStates.Add(GetComponent<VaultMovement>());
+        foreach(MovementState movementState in GetComponents<MovementState>()){
+            movementStates.Add(movementState);
+        }
     }
 
     void Update()
@@ -62,8 +61,9 @@ public class MovementController : MonoBehaviour
         flatRight.y = 0.0f;
         Vector3 controlledMovement = flatForward.normalized * z + flatRight.normalized * x;
 
+        // TODO: remove first parameter to GetMovement and reference cc.velocity in the function
         // movement = currMovementState.GetMovement(movement, controlledMovement);
-        movement = currMovementState.GetMovement(cc.velocity, controlledMovement);// TODO: test when more movements are implimented
+        movement = currMovementState.GetMovement(cc.velocity, controlledMovement);
         MovementState.MovementStateName ms = currMovementState.GetState();
         if(ms != currMovementState.state){
             SetMovementState(ms);
@@ -71,7 +71,17 @@ public class MovementController : MonoBehaviour
         
         movement += Physics.gravity * Time.deltaTime;
         Vector3 frameMovement = movement * Time.deltaTime;
+
         cc.Move(frameMovement);
+        TurnTowards(controlledMovement);
+    }
+
+    private void TurnTowards(Vector3 dir){
+        if (dir.sqrMagnitude != 0.0f){
+            transform.rotation = Quaternion.LookRotation(dir.normalized);
+            // transform.DOLocalRotate(new Vector3(0.0f, 360.0f, 0.0f), 3.0f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuart);
+        }
+
     }
 
     public void OnControllerColliderHit(ControllerColliderHit hit){
@@ -87,7 +97,7 @@ public class MovementController : MonoBehaviour
             // SetState(MovementStateE.WallClimb);
         }
     }
-    
+
     public void OnTriggerEnter(Collider collider){
         if(collider.gameObject.CompareTag("Bell")){
             // TODO: get bell

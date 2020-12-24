@@ -71,9 +71,10 @@ public class StandardMovement : MovementState
             }
 
             float[] jumpSpeeds = {jumpSpeed, secondJumpSpeed, thirdJumpSpeed};
-            Vector3[] DORotation = {new Vector3(0,0,0), transform.right * -360, Vector3.up * 720};
             jumpSequence.Kill();
-            jumpSequence.Append(transform.DOLocalRotate(DORotation[jumpLevel], 1.0f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuart));
+            // TODO: cool jumps
+            // Vector3[] DORotation = {new Vector3(0,0,0), transform.right * -360, Vector3.up * 720};
+            // jumpSequence.Append(transform.DOLocalRotate(DORotation[jumpLevel], 1.0f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuart));
             vel = jumpSpeeds[jumpLevel];
             jumpLevel += 1;
             jumpLevel %= jumpSpeeds.Length;

@@ -46,9 +46,10 @@ public class MidairMovement : MovementState
         return controlledMovement;
     }
     override public MovementStateName GetState(){
-        if(Input.GetButtonDown("Fire1"))
-            return MovementStateName.ChargeSlam;
-        else if(cc.isGrounded)
+        // if(Input.GetButtonDown("Fire1"))
+        //     return MovementStateName.ChargeSlam;
+        // else 
+        if(cc.isGrounded)
             return MovementStateName.Standard;
         else
             return MovementStateName.Midair;
