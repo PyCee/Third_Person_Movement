@@ -18,10 +18,6 @@ public class VaultMovement : MovementState
     [Tooltip("Angle Of Vault"), Min(0.0f)]
     public float vaultJumpAngle;
 
-    public VaultMovement()
-        : base(MovementStateName.Vault) {
-    }
-
     private WallClimbMovement wallClimbMovement;
 
     override protected void _Start(){
@@ -51,10 +47,10 @@ public class VaultMovement : MovementState
         }
         return controlledMovement;
     }
-    override public MovementStateName GetState(){
+    override public System.Type GetState(){
         if(vaultReady)
-            return MovementStateName.Midair;
+            return typeof(MidairMovement);
         else
-            return MovementStateName.Vault;
+            return typeof(VaultMovement);
     }
 }

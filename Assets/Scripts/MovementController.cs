@@ -5,14 +5,13 @@ using Cinemachine;
 using DG.Tweening;
 
 [RequireComponent(typeof(CharacterController))]
-
 [RequireComponent(typeof(StandardMovement))]
 [RequireComponent(typeof(MidairMovement))]
 [RequireComponent(typeof(WallClimbMovement))]
 [RequireComponent(typeof(VaultMovement))]
+[RequireComponent(typeof(AirDashMovement))]
 public class MovementController : MonoBehaviour
 {
-    
     private CharacterController cc;
 
     private Vector3 movement;
@@ -23,20 +22,20 @@ public class MovementController : MonoBehaviour
     private List<MovementState> movementStates;
     private MovementState currMovementState;
     public MovementState GetCurrentMovementState(){return currMovementState;}
-    public void SetMovementState(MovementState.MovementStateName state){
+    public void SetMovementState(System.Type T){
         currMovementState.SwitchFrom();
         currMovementState = null;
         for(int i = 0; i < movementStates.Count; i++){
-            if(movementStates[i].state == state){
+            if(movementStates[i].GetType() == T){
                 currMovementState = movementStates[i];
                 break;
             }
         }
         if(currMovementState == null){
-            print("ERROR::No used movement state with name '"+state+"'");
+            print("ERROR::No used movement state with type '" + T + "'");
             return;
-        }
-        currMovementState.SwitchTo();
+        } else
+            currMovementState.SwitchTo();
     }
 
     void Start()
@@ -65,9 +64,9 @@ public class MovementController : MonoBehaviour
         // TODO: remove first parameter to GetMovement and reference cc.velocity in the function
         // movement = currMovementState.GetMovement(movement, controlledMovement);
         movement = currMovementState.GetMovement(cc.velocity, controlledMovement);
-        MovementState.MovementStateName ms = currMovementState.GetState();
-        if(ms != currMovementState.state){
-            SetMovementState(ms);
+        System.Type t = currMovementState.GetState();
+        if(t != currMovementState.GetType()){
+            SetMovementState(t);
         }
         
         movement += Physics.gravity * Time.deltaTime;
@@ -82,7 +81,6 @@ public class MovementController : MonoBehaviour
             transform.rotation = Quaternion.LookRotation(dir.normalized);
             // transform.DOLocalRotate(new Vector3(0.0f, 360.0f, 0.0f), 3.0f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuart);
         }
-
     }
     public void OnTriggerEnter(Collider collider){
         if(collider.gameObject.CompareTag("Bell")){

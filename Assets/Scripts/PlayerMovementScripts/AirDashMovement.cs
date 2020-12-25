@@ -13,10 +13,6 @@ public class AirDashMovement : MovementState
     private Vector3 _direction;
     private Vector3 _startPosition;
 
-    public AirDashMovement()
-        : base(MovementStateName.AirDash) {
-    }
-
     override protected void _Start(){
         _canShoot = false;
     }
@@ -33,17 +29,17 @@ public class AirDashMovement : MovementState
             print("ERROR::Airdash should not have a zero movement direction. May not have been set.");
         return _direction * dashMoveSpeed;
     }
-    override public MovementStateName GetState(){
+    override public System.Type GetState(){
 
         // TODO: if hit wall, change to midair
 
         float sqrDistance = (transform.position - _startPosition).sqrMagnitude;
         if(sqrDistance >= Mathf.Pow(dashMoveDistance, 2))
-            return MovementStateName.Midair;
+            return typeof(MidairMovement);
         else if(cc.isGrounded)
-            return MovementStateName.Standard;
+            return typeof(StandardMovement);
         else
-            return MovementStateName.AirDash;
+            return typeof(AirDashMovement);
     }
     public void SetDirection(Vector3 direction){
         _direction = direction;

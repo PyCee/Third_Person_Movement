@@ -37,10 +37,6 @@ public class WallClimbMovement : MovementState
         return wallClimbSpeed;
     }
 
-    public WallClimbMovement()
-        : base(MovementStateName.WallClimb) {
-    }
-
     private VaultMovement vaultMovement;
     
     override protected void _Start(){
@@ -76,18 +72,18 @@ public class WallClimbMovement : MovementState
         }
         return controlledMovement;
     }
-    override public MovementStateName GetState(){
+    override public System.Type GetState(){
         // TODO: consider using layer to filter out many collisions
         Vector3 rayOffset = new Vector3(0.0f, wallClimbVaultRayOffset, 0.0f);
         if(wallClimbEnabled && !Physics.Raycast(transform.position + rayOffset, wallClimbNormal * -1.0f, vaultMovement.vaultRayDistance))
             // if character has reached top of wall, vault over
-            return MovementStateName.Vault;
+            return typeof(VaultMovement);
         else if(cc.isGrounded)
             // If the character has reached the bottom of the wall
-            return MovementStateName.Standard;
+            return typeof(StandardMovement);
         else if(Input.GetButtonDown("Jump"))
-            return MovementStateName.Midair;
+            return typeof(MidairMovement);
         else
-            return MovementStateName.WallClimb;
+            return typeof(WallClimbMovement);
     }
 }

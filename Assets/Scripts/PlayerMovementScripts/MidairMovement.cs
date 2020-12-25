@@ -19,10 +19,6 @@ public class MidairMovement : MovementState
     public float doubleJumpSpeed;
     private bool doubleJumpReady = true;
 
-    public MidairMovement()
-        : base(MovementStateName.Midair) {
-    }
-
     override protected void _Start(){
         
     }
@@ -56,14 +52,14 @@ public class MidairMovement : MovementState
         }
         return controlledMovement;
     }
-    override public MovementStateName GetState(){
+    override public System.Type GetState(){
         // if(Input.GetButtonDown("Fire1"))
         //     return MovementStateName.ChargeSlam;
         // else 
         if(cc.isGrounded)
-            return MovementStateName.Standard;
+            return typeof(StandardMovement);
         else
-            return MovementStateName.Midair;
+            return typeof(MidairMovement);
     }
     public float GetDoubleJumpSpeed(){
         return doubleJumpSpeed;
@@ -75,7 +71,7 @@ public class MidairMovement : MovementState
             // TODO base the above if on movement direction
             // Hold onto wall
             // GetComponent<StandardMovement>().jumpLevel = 0;
-            mc.SetMovementState(MovementState.MovementStateName.WallClimb);
+            mc.SetMovementState(typeof(WallClimbMovement));
             GetComponent<WallClimbMovement>().SetWallClimbNormal(hit.normal);
             // SetState(MovementStateE.WallClimb);
         }

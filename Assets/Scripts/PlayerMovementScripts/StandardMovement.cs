@@ -27,9 +27,6 @@ public class StandardMovement : MovementState
     private float timeGrounded;
     private Sequence jumpSequence;
 
-    public StandardMovement()
-        : base(MovementStateName.Standard) {
-    }
     override protected void _Start(){
         jumpSequence = DOTween.Sequence();
     }
@@ -55,11 +52,11 @@ public class StandardMovement : MovementState
 
         return controlledMovement;
     }
-    override public MovementStateName GetState(){
+    override public System.Type GetState(){
         if(!cc.isGrounded)
-            return MovementStateName.Midair;
+            return typeof(MidairMovement);
         else
-            return MovementStateName.Standard;
+            return typeof(StandardMovement);
     }
     private float GetJumpVelocity(){
         float vel = 0.0f;
