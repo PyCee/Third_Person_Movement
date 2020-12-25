@@ -30,10 +30,14 @@ public class StandardMovement : MovementState
     public StandardMovement()
         : base(MovementStateName.Standard) {
     }
-
-    void Start(){
-        Init();
+    override protected void _Start(){
         jumpSequence = DOTween.Sequence();
+    }
+    override protected void _SwitchTo(){
+        material.SetColor("_Color", Color.red);
+        timeGrounded = Time.time;
+    }
+    override protected void _SwitchFrom(){
     }
     
     override public Vector3 GetMovement(Vector3 vel, Vector3 controlledMovement){
@@ -56,12 +60,6 @@ public class StandardMovement : MovementState
             return MovementStateName.Midair;
         else
             return MovementStateName.Standard;
-    }
-    override public void SwitchTo(){
-        material.SetColor("_Color", Color.red);
-        timeGrounded = Time.time;
-    }
-    override public void SwitchFrom(){
     }
     private float GetJumpVelocity(){
         float vel = 0.0f;

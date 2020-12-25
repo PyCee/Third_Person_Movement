@@ -21,8 +21,9 @@ public class MovementController : MonoBehaviour
     private Material material;
 
     private List<MovementState> movementStates;
-    MovementState currMovementState;
-    private void SetMovementState(MovementState.MovementStateName state){
+    private MovementState currMovementState;
+    public MovementState GetCurrentMovementState(){return currMovementState;}
+    public void SetMovementState(MovementState.MovementStateName state){
         currMovementState.SwitchFrom();
         currMovementState = null;
         for(int i = 0; i < movementStates.Count; i++){
@@ -83,21 +84,6 @@ public class MovementController : MonoBehaviour
         }
 
     }
-
-    public void OnControllerColliderHit(ControllerColliderHit hit){
-        // TODO: can I put this into MidairMovement class
-        if(currMovementState.state == MovementState.MovementStateName.Midair && GetComponent<WallClimbMovement>().wallClimbEnabled &&
-            Vector3.Dot(Vector3.up, hit.normal) < 0.7071 && Vector3.Dot(Vector3.up, hit.normal) > -0.7071 &&
-            Vector3.Dot(movement.normalized, -1.0f * hit.normal) > 0.7071){
-            // TODO base the above if on movement direction
-            // Hold onto wall
-            // GetComponent<StandardMovement>().jumpLevel = 0;
-            SetMovementState(MovementState.MovementStateName.WallClimb);
-            GetComponent<WallClimbMovement>().SetWallClimbNormal(hit.normal);
-            // SetState(MovementStateE.WallClimb);
-        }
-    }
-
     public void OnTriggerEnter(Collider collider){
         if(collider.gameObject.CompareTag("Bell")){
             // TODO: get bell

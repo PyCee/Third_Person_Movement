@@ -24,9 +24,14 @@ public class VaultMovement : MovementState
 
     private WallClimbMovement wallClimbMovement;
 
-    void Start(){
-        Init();
+    override protected void _Start(){
         wallClimbMovement = GetComponent<WallClimbMovement>();
+    }
+    override protected void _SwitchTo(){
+        material.SetColor("_Color", Color.magenta);
+        vaultReady = false;
+    }
+    override protected void _SwitchFrom(){
     }
     
     private bool vaultReady;
@@ -51,11 +56,5 @@ public class VaultMovement : MovementState
             return MovementStateName.Midair;
         else
             return MovementStateName.Vault;
-    }
-    override public void SwitchTo(){
-        material.SetColor("_Color", Color.magenta);
-        vaultReady = false;
-    }
-    override public void SwitchFrom(){
     }
 }

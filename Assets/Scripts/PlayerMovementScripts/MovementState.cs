@@ -9,6 +9,7 @@ public abstract class MovementState : MonoBehaviour
         Midair,
         WallClimb,
         Vault,
+        AirDash,
         Dive,
         ChargeSlam,
         Slam
@@ -20,6 +21,10 @@ public abstract class MovementState : MonoBehaviour
 
     private List<MovementStateName> usedNames = new List<MovementStateName>();
 
+    protected bool _isActive;
+    protected bool _canShoot;
+    public bool CanShoot(){return _canShoot;}
+
     public MovementState(MovementStateName initState){
         state = initState;
 
@@ -29,15 +34,26 @@ public abstract class MovementState : MonoBehaviour
             usedNames.Add(state);
         }
     }
-    
-    protected void Init(){
+    void Start(){
         cc = GetComponent<CharacterController>();
         mc = GetComponent<MovementController>();
         material = GetComponent<Renderer>().material;
+        _isActive = false;
+        _canShoot = true;
+        _Start();
     }
+    abstract protected void _Start();
+    abstract protected void _SwitchTo();
+    abstract protected void _SwitchFrom();
     
     abstract public Vector3 GetMovement(Vector3 previousMovement, Vector3 controlledMovement);
     abstract public MovementStateName GetState();
-    abstract public void SwitchTo();
-    abstract public void SwitchFrom();
+    public void SwitchTo(){
+        _isActive = true;
+        _SwitchTo();
+    }
+    public void SwitchFrom(){
+        _SwitchFrom();
+        _isActive = false;
+    }
 }

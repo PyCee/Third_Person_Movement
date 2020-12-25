@@ -86,18 +86,22 @@ public class AimingController : MonoBehaviour
     private void Shoot(){
         RaycastHit hit;
         // Does the ray intersect any objects excluding the player layer
-        if (Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, Mathf.Infinity)){
+        if (CanShoot() && 
+            Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, Mathf.Infinity)){
             // If the center of the camera raycast hists an object
             Vector3 offset = hit.point - shotOrigin.position;
             Vector3 dir = offset / offset.magnitude;
             Debug.DrawRay(shotOrigin.position, offset, Color.blue, 2);
 
             // TODO handle projectile based on selected shot type (arrow, hookshot, airdash, ...)
-            shotGenerator.Shoot(shotOrigin.position, dir);
-            // impulseGenerator.Shoot(shotOrigin.position, dir);
+            // shotGenerator.Shoot(shotOrigin.position, dir);
+            impulseGenerator.Shoot(shotOrigin.position, dir);
 
         } else {
             // Shoot in direction
         }
+    }
+    private bool CanShoot(){
+        return GetComponent<MovementController>().GetCurrentMovementState().CanShoot();
     }
 }
