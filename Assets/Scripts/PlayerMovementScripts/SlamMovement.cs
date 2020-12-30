@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 
-public class AirDashMovement : MovementState
+public class SlamMovement : MovementState
 {
-    [Header("Air Dash")]
-    [Tooltip("Speed Of Dash"), Min(0.0f)]
-    public float dashMoveSpeed;
-    [Tooltip("Distance Of Dash"), Min(0.0f)]
-    public float dashMoveDistance;
+    [Header("Slam")]
+    [Tooltip("Speed Of Slam"), Min(0.0f)]
+    public float slamMoveSpeed;
     private Vector3 _direction;
     private Vector3 _startPosition;
 
@@ -17,7 +15,7 @@ public class AirDashMovement : MovementState
         _canShoot = false;
     }
     override protected void _SwitchTo(){
-        material.SetColor("_Color", Color.yellow);
+        material.SetColor("_Color", Color.grey);
         _startPosition = transform.position;
         if(_direction == Vector3.zero)
             print("ERROR::_direction should not have a magnitude of zero. May not have been set prior to 'SwitchTo'.");
@@ -27,20 +25,21 @@ public class AirDashMovement : MovementState
     }
     
     override public Vector3 GetMovement(Vector3 vel, Vector3 controlledMovement){
-        return _direction * dashMoveSpeed;
+        return _direction * slamMoveSpeed;
     }
     override public System.Type GetState(){
-        // TODO: if hit wall, return midair
-        float sqrDistance = (transform.position - _startPosition).sqrMagnitude;
-        if(sqrDistance >= Mathf.Pow(dashMoveDistance, 2))
-            return typeof(MidairMovement);
-        else if(cc.isGrounded)
+        // float sqrDistance = (transform.position - _startPosition).sqrMagnitude;
+        // if(sqrDistance >= Mathf.Pow(slamMoveDistance, 2))
+        //     return typeof(MidairMovement);
+        // else 
+        if(cc.isGrounded)
             return typeof(StandardMovement);
         else
-            return typeof(AirDashMovement);
+            return typeof(SlamMovement);
     }
     public void SetDirection(Vector3 direction){
         _direction = direction;
+        // if direction isnt down, error
     }
     public void OnControllerColliderHit(ControllerColliderHit hit){
         if(_isActive){

@@ -71,9 +71,8 @@ public class MidairMovement : MovementState
             // TODO base the above if on movement direction
             // Hold onto wall
             // GetComponent<StandardMovement>().jumpLevel = 0;
-            mc.SetMovementState(typeof(WallClimbMovement));
             GetComponent<WallClimbMovement>().SetWallClimbNormal(hit.normal);
-            // SetState(MovementStateE.WallClimb);
+            mc.SetMovementState(typeof(WallClimbMovement));
         }
     }
 }

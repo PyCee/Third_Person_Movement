@@ -24,20 +24,32 @@ public class AimingController : MonoBehaviour
 
     private bool currentlyAiming;
 
-    private ShotGenerator shotGenerator;
-    private ShotGenerator impulseGenerator;
+    private int shotGeneratorIndex;
+    private List<ShotGenerator> shotGenerators;
 
     void Start()
     {
         startingFixedDeltaTime = Time.fixedDeltaTime;
         currentlyAiming = false;
 
-        shotGenerator = GetComponent<ArrowGenerator>();
-        impulseGenerator = GetComponent<ImpulseGenerator>();
+        shotGenerators = new List<ShotGenerator>();
+        foreach(ShotGenerator shotGenerator in GetComponents<ShotGenerator>()){
+            shotGenerators.Add(shotGenerator);
+        }
+        shotGeneratorIndex = 0;
     }
 
     void Update()
     {
+        if(Input.GetKeyDown(KeyCode.E)){
+            IncrementShotIndex();
+            print(shotGenerators[shotGeneratorIndex].GetType());
+            // TODO: End aim of last and start aim of new to handle visual indicators
+        } else if(Input.GetKeyDown(KeyCode.Q)){
+            DecrementShotIndex();
+            print(shotGenerators[shotGeneratorIndex].GetType());
+        }
+
         // TODO::Update to new unity input system. Currently use legacy system.
         if(Input.GetButtonDown("Fire1")){
             StartAim();
@@ -94,8 +106,7 @@ public class AimingController : MonoBehaviour
             Debug.DrawRay(shotOrigin.position, offset, Color.blue, 2);
 
             // TODO handle projectile based on selected shot type (arrow, hookshot, airdash, ...)
-            // shotGenerator.Shoot(shotOrigin.position, dir);
-            impulseGenerator.Shoot(shotOrigin.position, dir);
+            shotGenerators[shotGeneratorIndex].Shoot(shotOrigin.position, dir);
 
         } else {
             // Shoot in direction
@@ -103,5 +114,17 @@ public class AimingController : MonoBehaviour
     }
     private bool CanShoot(){
         return GetComponent<MovementController>().GetCurrentMovementState().CanShoot();
+    }
+    public void IncrementShotIndex(){
+        shotGeneratorIndex++;
+        ApplyShotIndexBounds();
+    }
+    public void DecrementShotIndex(){
+        shotGeneratorIndex--;
+        ApplyShotIndexBounds();
+
+    }
+    private void ApplyShotIndexBounds(){
+        shotGeneratorIndex %= shotGenerators.Count;
     }
 }
