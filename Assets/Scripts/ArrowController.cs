@@ -16,13 +16,14 @@ public class ArrowController : MonoBehaviour
         if(collision.gameObject.CompareTag("Player"))
             return;
         else
-            FreezeArrow();
+            FreezeArrow(collision.gameObject);
     }
-    private void FreezeArrow(){
+    private void FreezeArrow(GameObject go){
         Rigidbody rb = GetComponent<Rigidbody>();
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         rb.isKinematic = true;
         GetComponent<Collider>().isTrigger = true;
-        // print(collision.gameObject.name);
+        // print(go.name);
+        transform.SetParent(go.transform);
     }
 }

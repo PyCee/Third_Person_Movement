@@ -14,4 +14,6 @@ public class ArrowGenerator : ShotGenerator
         Vector3 arrowImpulse = dir * arrowSpeed;
         arrow.GetComponent<Rigidbody>().AddForce(arrowImpulse);
     }
+    override public void BeginAim(){}
+    override public void EndAim(){}
 }

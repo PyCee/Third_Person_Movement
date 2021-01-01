@@ -14,11 +14,11 @@ public class AimingController : MonoBehaviour
     public float slowdownRate;
     [Tooltip("Duration Of Time Change"), Min(0.0f)]
     public float timerateChangeDuration;
-    [Tooltip("Aiming Cinemachine Camera")]
-    public CinemachineFreeLook aimingCamera;
     [Tooltip("Standard Cinemachine Camera")]
     public CinemachineFreeLook standardCamera;
     public Transform shotOrigin;
+    [Tooltip("Layers to exclude from aiming raycast")]
+    public LayerMask excludeAimLayers;
 
     private float startingFixedDeltaTime; // Normal physics update delta time
 
@@ -26,6 +26,9 @@ public class AimingController : MonoBehaviour
 
     private int shotGeneratorIndex;
     private List<ShotGenerator> shotGenerators;
+    private CinemachineFreeLook GetCurrentCamera(){
+        return shotGenerators[shotGeneratorIndex].aimCamera;
+    }
 
     void Start()
     {
@@ -41,14 +44,6 @@ public class AimingController : MonoBehaviour
 
     void Update()
     {
-        if(Input.GetKeyDown(KeyCode.E)){
-            IncrementShotIndex();
-            print(shotGenerators[shotGeneratorIndex].GetType());
-            // TODO: End aim of last and start aim of new to handle visual indicators
-        } else if(Input.GetKeyDown(KeyCode.Q)){
-            DecrementShotIndex();
-            print(shotGenerators[shotGeneratorIndex].GetType());
-        }
 
         // TODO::Update to new unity input system. Currently use legacy system.
         if(Input.GetButtonDown("Fire1")){
@@ -58,22 +53,28 @@ public class AimingController : MonoBehaviour
             Shoot();
         }
         if(currentlyAiming){
+            if(Input.GetKeyDown(KeyCode.E)){
+                ChangeAimingType(+1);
+                // TODO: visual indicator for shot type
+                // TODO: End aim of last and start aim of new to handle visual indicators
+            } else if(Input.GetKeyDown(KeyCode.Q)){
+                ChangeAimingType(-1);
+            }
             //TODO Update visual element
-            //TODO rotate character so aim direction is formward
+            //TODO rotate character so aim direction is forward
         }
     }
     public void StartAim(){
         // Slow down time
         ChangeTimeOverTime(slowdownRate);
-        // TODO Change camera
         StartAimCamera();
         // TODO Add visual element for aim
-        //
+        
         currentlyAiming = true;
     }
     public void EndAim(){
         // TODO remove visual aiming element
-        // TODO revert to normal camera
+
         EndAimCamera();
         // Normal time
         ChangeTimeOverTime(1.0f);
@@ -85,21 +86,39 @@ public class AimingController : MonoBehaviour
         Time.fixedDeltaTime = startingFixedDeltaTime * endingTimeRate;
         Time.timeScale = endingTimeRate;
     }
+
+    // Copy Camera Parameters From One Camera To Another And Set Priorities
+    private void SwitchToCamera(CinemachineFreeLook switchToCamera, CinemachineFreeLook switchFromCamera){
+        switchToCamera.m_XAxis.Value = switchFromCamera.m_XAxis.Value;
+        switchToCamera.m_YAxis.Value = switchFromCamera.m_YAxis.Value;
+        switchFromCamera.m_Priority = 9;
+        switchToCamera.m_Priority = 11;
+    }
     private void StartAimCamera(){
-        aimingCamera.m_XAxis.Value = standardCamera.m_XAxis.Value;
-        aimingCamera.m_YAxis.Value = standardCamera.m_YAxis.Value;
-        aimingCamera.m_Priority = 11;
+        SwitchToCamera(GetCurrentCamera(), standardCamera);
     }
     private void EndAimCamera(){
-        standardCamera.m_XAxis.Value = aimingCamera.m_XAxis.Value;
-        standardCamera.m_YAxis.Value = aimingCamera.m_YAxis.Value;
-        aimingCamera.m_Priority = 9;
+        SwitchToCamera(standardCamera, GetCurrentCamera());
+    }
+    private void ApplyShotIndexBounds(){
+    }
+    private void ChangeAimingType(int indexChange){
+        int lastIndex = shotGeneratorIndex;
+
+        shotGeneratorIndex += indexChange;
+
+        shotGeneratorIndex %= shotGenerators.Count;
+        if(shotGeneratorIndex > shotGenerators.Count) shotGeneratorIndex -= shotGenerators.Count;
+        else if(shotGeneratorIndex < 0) shotGeneratorIndex += shotGenerators.Count;
+
+        SwitchToCamera(GetCurrentCamera(), shotGenerators[lastIndex].aimCamera);
+        print(shotGenerators[shotGeneratorIndex].GetType());
     }
     private void Shoot(){
         RaycastHit hit;
         // Does the ray intersect any objects excluding the player layer
         if (CanShoot() && 
-            Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, Mathf.Infinity)){
+            Physics.Raycast(Camera.main.transform.position, Camera.main.transform.forward, out hit, Mathf.Infinity, ~excludeAimLayers)){
             // If the center of the camera raycast hists an object
             Vector3 offset = hit.point - shotOrigin.position;
             Vector3 dir = offset / offset.magnitude;
@@ -114,17 +133,5 @@ public class AimingController : MonoBehaviour
     }
     private bool CanShoot(){
         return GetComponent<MovementController>().GetCurrentMovementState().CanShoot();
-    }
-    public void IncrementShotIndex(){
-        shotGeneratorIndex++;
-        ApplyShotIndexBounds();
-    }
-    public void DecrementShotIndex(){
-        shotGeneratorIndex--;
-        ApplyShotIndexBounds();
-
-    }
-    private void ApplyShotIndexBounds(){
-        shotGeneratorIndex %= shotGenerators.Count;
     }
 }

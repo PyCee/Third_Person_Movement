@@ -2,11 +2,11 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class ImpulseGenerator : ShotGenerator
+public class SlamGenerator : ShotGenerator
 {
     override public void Shoot(Vector3 origin, Vector3 dir){
-        GetComponent<AirDashMovement>().SetDirection(dir);
-        GetComponent<MovementController>().SetMovementState(typeof(AirDashMovement));
+        GetComponent<SlamMovement>().SetDirection(dir);
+        GetComponent<MovementController>().SetMovementState(typeof(SlamMovement));
     }
     override public void BeginAim(){}
     override public void EndAim(){}

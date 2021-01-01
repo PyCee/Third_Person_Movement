@@ -42,9 +42,7 @@ public class AirDashMovement : MovementState
     public void SetDirection(Vector3 direction){
         _direction = direction;
     }
-    public void OnControllerColliderHit(ControllerColliderHit hit){
-        if(_isActive){
+    override protected void _OnControllerColliderHit(ControllerColliderHit hit){
             // if hit angle is opposite _direction
-        }
     }
 }

@@ -17,15 +17,14 @@ public class MidairMovement : MovementState
     public bool enableDoubleJump;
     [Tooltip("Double Jump Velocity"), Min(0.0f)]
     public float doubleJumpSpeed;
-    private bool doubleJumpReady = true;
+    private bool _doubleJumpReady = true;
+    private bool _downwards;
 
     override protected void _Start(){
-        
     }
     override protected void _SwitchTo(){
         material.SetColor("_Color", Color.black);
-        doubleJumpReady = true;
-
+        _doubleJumpReady = true;
         // Must use movement variable to calculate momentum because character controller velocity is a frame behind
         midairMomentum = mc.GetMovement();
         midairMomentum.y = 0.0f;
@@ -45,10 +44,10 @@ public class MidairMovement : MovementState
         // if(diveEnabled && Input.GetButtonDown("Dive") && flatMovement.sqrMagnitude > (minDiveSpeed * minDiveSpeed)){
         //     SetState(MovementStateE.Dive);
         // } else 
-        if(Input.GetButtonDown("Jump") && enableDoubleJump && doubleJumpReady){
+        if(Input.GetButtonDown("Jump") && enableDoubleJump && _doubleJumpReady){
             controlledMovement.y = GetDoubleJumpSpeed();
             // transform.DOLocalRotate(Vector3.up * 720, 1.0f, RotateMode.LocalAxisAdd).SetEase(Ease.OutQuart);
-            doubleJumpReady = false;
+            _doubleJumpReady = false;
         }
         return controlledMovement;
     }
@@ -56,7 +55,7 @@ public class MidairMovement : MovementState
         // if(Input.GetButtonDown("Fire1"))
         //     return MovementStateName.ChargeSlam;
         // else 
-        if(cc.isGrounded)
+        if(cc.isGrounded && GetComponent<MovementController>().GetMovement().y < 0.0f)
             return typeof(StandardMovement);
         else
             return typeof(MidairMovement);
@@ -64,8 +63,8 @@ public class MidairMovement : MovementState
     public float GetDoubleJumpSpeed(){
         return doubleJumpSpeed;
     }
-    public void OnControllerColliderHit(ControllerColliderHit hit){
-        if(_isActive && GetComponent<WallClimbMovement>().wallClimbEnabled && 
+    override protected void _OnControllerColliderHit(ControllerColliderHit hit){
+        if(GetComponent<WallClimbMovement>().wallClimbEnabled && 
             Vector3.Dot(Vector3.up, hit.normal) < 0.7071 && Vector3.Dot(Vector3.up, hit.normal) > -0.7071 && 
             Vector3.Dot(mc.GetMovement().normalized, -1.0f * hit.normal) > 0.7071){
             // TODO base the above if on movement direction

@@ -20,9 +20,11 @@ public abstract class MovementState : MonoBehaviour
         _canShoot = true;
         _Start();
     }
-    abstract protected void _Start();
-    abstract protected void _SwitchTo();
-    abstract protected void _SwitchFrom();
+    virtual protected void _Start(){}
+    virtual protected void _SwitchTo(){}
+    virtual protected void _Update(){}
+    virtual protected void _SwitchFrom(){}
+    virtual protected void _OnControllerColliderHit(ControllerColliderHit hit){}
     
     abstract public Vector3 GetMovement(Vector3 previousMovement, Vector3 controlledMovement);
     abstract public System.Type GetState();
@@ -30,8 +32,18 @@ public abstract class MovementState : MonoBehaviour
         _isActive = true;
         _SwitchTo();
     }
+    public void Update(){
+        if(_isActive){
+            _Update();
+        }
+    }
     public void SwitchFrom(){
         _SwitchFrom();
         _isActive = false;
+    }
+    public void OnControllerColliderHit(ControllerColliderHit hit){
+        if(_isActive){
+            _OnControllerColliderHit(hit);
+        }
     }
 }
