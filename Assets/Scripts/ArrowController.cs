@@ -16,14 +16,17 @@ public class ArrowController : MonoBehaviour
         if(collision.gameObject.CompareTag("Player"))
             return;
         else
-            FreezeArrow(collision.gameObject);
+            FreezeArrow(collision);
     }
-    private void FreezeArrow(GameObject go){
+    private void FreezeArrow(Collision collision){
         Rigidbody rb = GetComponent<Rigidbody>();
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousSpeculative;
         rb.isKinematic = true;
         GetComponent<Collider>().isTrigger = true;
-        // print(go.name);
-        transform.SetParent(go.transform);
+
+        // Create an empty game object to act as intermediary parent to avoid the arrow inheriting scale and rotation
+        GameObject empty = Instantiate(new GameObject());
+        empty.transform.SetParent(collision.transform);
+        transform.SetParent(empty.transform);
     }
 }
