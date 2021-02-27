@@ -20,17 +20,18 @@ public class SprintMovement : MovementState
     }
     override protected void _SwitchFrom(){
     }
+
     
     override public Vector3 GetMovement(Vector3 vel, Vector3 controlledMovement){
         controlledMovement *= moveSpeed;
-        controlledMovement.y = vel.y;
+        Vector3 groundNormal = GetComponent<StandardMovement>().GetGroundNormal();
+        Quaternion groundRotation = Quaternion.FromToRotation(Vector3.up, groundNormal);
+        Vector3 tmpControlledMovement = groundRotation * controlledMovement;
+        if(tmpControlledMovement.y < 0.0f)
+            controlledMovement = tmpControlledMovement;
 
-        if(cc.isGrounded){
-            if(Input.GetButtonDown("Jump")){
-                controlledMovement.y = GetJumpVelocity();
-            } else {
-                controlledMovement.y = 0.0f;
-            }
+        if(Input.GetButtonDown("Jump")){
+            controlledMovement.y = GetJumpVelocity();
         }
 
         return controlledMovement;

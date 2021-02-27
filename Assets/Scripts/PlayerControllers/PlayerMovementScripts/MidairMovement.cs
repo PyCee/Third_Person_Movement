@@ -39,13 +39,6 @@ public class MidairMovement : MovementState
         controlledMovement *= midairMoveSpeed;
         controlledMovement = new Vector3(controlledMovement.x, vel.y, controlledMovement.z);
         controlledMovement += midairMomentum;
-
-        Vector3 flatMovement = vel;
-        flatMovement.y = 0;
-        // TODO for if/when I do dive again
-        // if(diveEnabled && Input.GetButtonDown("Dive") && flatMovement.sqrMagnitude > (minDiveSpeed * minDiveSpeed)){
-        //     SetState(MovementStateE.Dive);
-        // } else 
         
         if(Input.GetButtonDown("Slam")){
             _slam = true;

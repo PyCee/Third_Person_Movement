@@ -36,18 +36,30 @@ public class StandardMovement : MovementState
     }
     override protected void _SwitchFrom(){
     }
+    public Vector3 GetGroundNormal(){
+        Vector3 rayOffset = new Vector3(0.0f, 0.0f, 0.0f);
+
+        LayerMask layerMask = ~LayerMask.GetMask("Player");
+        RaycastHit hit;
+        if(Physics.Raycast(transform.position, Vector3.down, out hit, 2.0f, layerMask)){
+            return hit.normal;
+        } else {
+            return Vector3.up;
+        }
+    }
     
     override public Vector3 GetMovement(Vector3 vel, Vector3 controlledMovement){
         // TODO: test with cc.velocity in place of vel, might lag and not use last frame info
         controlledMovement *= moveSpeed;
-        controlledMovement.y = vel.y;
+        // TODO: if within angle of up
+        Vector3 groundNormal = GetGroundNormal();
+        Quaternion groundRotation = Quaternion.FromToRotation(Vector3.up, groundNormal);
+        Vector3 tmpControlledMovement = groundRotation * controlledMovement;
+        if(tmpControlledMovement.y < 0.0f)
+            controlledMovement = tmpControlledMovement;
 
-        if(cc.isGrounded){
-            if(Input.GetButtonDown("Jump")){
-                controlledMovement.y = GetJumpVelocity();
-            } else {
-                controlledMovement.y = 0.0f;
-            }
+        if(Input.GetButtonDown("Jump")){
+            controlledMovement.y = GetJumpVelocity();
         }
 
         return controlledMovement;

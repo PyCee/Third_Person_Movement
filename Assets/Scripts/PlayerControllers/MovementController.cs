@@ -63,14 +63,14 @@ public class MovementController : MonoBehaviour
         flatRight.y = 0.0f;
         Vector3 controlledMovement = flatForward.normalized * z + flatRight.normalized * x;
 
-        // TODO: remove first parameter to GetMovement and reference cc.velocity in the function
-        // movement = currMovementState.GetMovement(movement, controlledMovement);
-        movement = currMovementState.GetMovement(cc.velocity, controlledMovement);
         System.Type t = currMovementState.GetState();
         if(t != currMovementState.GetType()){
             SetMovementState(t);
         }
-        
+        // TODO: remove first parameter to GetMovement and reference cc.velocity in the function
+        // movement = currMovementState.GetMovement(movement, controlledMovement);
+        movement = currMovementState.GetMovement(cc.velocity, controlledMovement);
+
         movement += Physics.gravity * Time.deltaTime;
         Vector3 frameMovement = movement * Time.deltaTime;
 
